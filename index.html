@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Triwizard Tournament | Student Arena</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Fira+Code:wght@400;500&family=Pinyon+Script&family=Cormorant+Garamond:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- VISUAL STYLES (Unchanged) --- */
+        :root { --bg-deep: #15100d; --parchment: #f0e6d2; --parchment-dark: #dcd0b3; --ink: #2a221b; --gold: #c5a059; --gold-glow: rgba(197, 160, 89, 0.5); --danger: #8a1c1c; --magic-font: 'Cinzel', serif; --hand-font: 'Pinyon Script', cursive; --body-font: 'Cormorant Garamond', serif; --code-font: 'Fira Code', monospace; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: var(--bg-deep); background-image: radial-gradient(circle at 50% 50%, #2a221b 0%, #000 90%); color: var(--parchment); font-family: var(--body-font); height: 100vh; overflow: hidden; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; transition: transform 1s ease; }
+        .hidden { display: none !important; }
+        
+        button { background: transparent; border: 2px solid var(--gold); color: var(--gold); padding: 12px 30px; font-family: var(--magic-font); font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 2px; }
+        button:hover { background: var(--gold); color: #15100d; box-shadow: 0 0 25px var(--gold-glow); transform: translateY(-2px); }
+        select, input { background: rgba(0,0,0,0.4); border: none; border-bottom: 2px solid var(--gold); color: var(--parchment); padding: 12px; font-family: var(--magic-font); font-size: 1rem; width: 100%; outline: none; margin-bottom: 20px; }
+        select option { background: #15100d; color: var(--gold); padding: 10px; }
+
+        #login-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+        .letter-box { width: 550px; padding: 4rem; background: var(--parchment); color: var(--ink); box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 80px rgba(139, 69, 19, 0.15); text-align: center; border: 8px double var(--parchment-dark); position: relative; }
+        .letter-box h1 { font-family: var(--magic-font); color: var(--ink); font-size: 2.2rem; border-bottom: 2px solid var(--ink); padding-bottom: 15px; margin-bottom: 25px; font-weight: 700; }
+        .letter-box p { font-family: var(--body-font); font-size: 1.3rem; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+        .letter-box select, .letter-box button { border-color: var(--ink); color: var(--ink); font-weight: bold; }
+        .letter-box button:hover { background: var(--ink); color: var(--parchment); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        #arena-screen { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; height: 100vh; padding: 30px; padding-top: 90px; }
+        .panel { display: flex; flex-direction: column; border-radius: 4px; overflow: hidden; height: 100%; position: relative; }
+        .panel-task { background: var(--parchment); color: var(--ink); box-shadow: inset 0 0 60px rgba(139, 69, 19, 0.2), 0 10px 30px rgba(0,0,0,0.8); border: 1px solid var(--parchment-dark); }
+        .panel-task .panel-header { background: rgba(42, 34, 27, 0.1); border-bottom: 2px dashed var(--ink); color: var(--ink); }
+        .panel-editor { background: #0e0e0e; border: 2px solid var(--gold); box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+        .panel-editor .panel-header { background: #1a1512; border-bottom: 1px solid var(--gold); color: var(--gold); }
+        .panel-header { padding: 18px 25px; font-family: var(--magic-font); font-weight: 700; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
+        #task-content-area { padding: 35px; overflow-y: auto; flex-grow: 1; font-family: var(--body-font); font-size: 1.4rem; line-height: 1.6; font-weight: 600; white-space: pre-wrap; word-wrap: break-word; user-select: none; }
+        textarea.code-editor { flex-grow: 1; background: #0e0e0e; color: #d4d4d4; border: none; padding: 25px; font-family: var(--code-font); font-size: 1rem; line-height: 1.6; resize: none; outline: none; transition: filter 0.5s ease; user-select: text; }
+        textarea.code-editor.idle-curse { filter: blur(5px) grayscale(100%); opacity: 0.6; pointer-events: auto; }
+
+        .sync-badge { font-size: 0.8rem; padding: 5px 10px; border-radius: 4px; font-family: var(--code-font); letter-spacing: 0; }
+        .sync-on { background: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00; color: #00ff00; }
+        .sync-off { background: rgba(255, 255, 255, 0.1); border: 1px solid #777; color: #777; }
+        .curse-text { background: rgba(255, 0, 0, 0.1); border: 1px solid red; color: red; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        #leaderboard-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--parchment) url('https://www.transparenttextures.com/patterns/aged-paper.png'); z-index: 500; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 80px; overflow-y: auto; }
+        #leaderboard-overlay h1 { font-family: var(--magic-font); font-size: 4rem; color: var(--ink); text-transform: uppercase; letter-spacing: 5px; border-bottom: 4px double var(--ink); padding-bottom: 20px; margin-bottom: 10px; }
+        #round-status-text { font-family: var(--hand-font); font-size: 2.5rem; color: var(--danger); margin-bottom: 40px; }
+        .leaderboard-table { width: 70%; border-collapse: collapse; background: rgba(255, 255, 255, 0.2); border: 2px solid var(--ink); }
+        .leaderboard-table th { text-align: left; color: var(--parchment); background: var(--ink); font-family: var(--magic-font); font-size: 1.2rem; padding: 20px; letter-spacing: 2px; }
+        .leaderboard-table td { padding: 20px; border-bottom: 1px dashed rgba(59, 45, 34, 0.4); color: var(--ink); font-family: var(--hand-font); font-size: 2.2rem; font-weight: 700; }
+        .row-1 td { color: var(--danger); text-shadow: 0 0 1px rgba(138, 28, 28, 0.3); background: rgba(138, 28, 28, 0.05); }
+
+        #global-timer { position: fixed; top: 0; left: 50%; transform: translateX(-50%); background: #15100d; padding: 10px 50px; border: 2px solid var(--gold); border-top: none; border-radius: 0 0 25px 25px; font-family: var(--magic-font); font-size: 2.5rem; color: var(--gold); text-shadow: 0 0 20px var(--gold); z-index: 1000; box-shadow: 0 5px 30px rgba(0,0,0,0.8); }
+        #countdown-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; justify-content: center; align-items: center; font-size: 15rem; font-family: var(--magic-font); color: var(--gold); text-shadow: 0 0 80px var(--gold); }
+        #cheat-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(138, 28, 28, 0.95); z-index: 3000; display: flex; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+        #cheat-overlay h1 { font-size: 5rem; color: #fff; text-shadow: 0 0 20px #000; }
+        #cheat-overlay p { font-size: 2rem; color: #fff; font-family: var(--body-font); margin-top: 20px; }
+
+        body.spell-mirror { transform: scaleX(-1); }
+    </style>
+</head>
+<body>
+    <div id="global-timer" class="hidden">00:00</div>
+    <div id="countdown-overlay" class="hidden">3</div>
+    <div id="cheat-overlay" class="hidden"><h1>EXPEL-IARMUS!</h1><p>Return to the grounds immediately.</p></div>
+
+    <div id="login-screen">
+        <div class="letter-box">
+            <h1>The Triwizard Tournament</h1>
+            <p>of Witchcraft and Wizardry</p>
+            <br>
+            <div id="login-step-1">
+                <p>Select House / Team:</p>
+                <select id="team-select"><option value="" disabled selected>Loading Teams...</option></select>
+                <button onclick="fetchTeamMembers()">Reveal Parchment</button>
+            </div>
+            <div id="login-step-2" class="hidden">
+                <p>Identify Yourself:</p>
+                <select id="member-select"></select>
+                <button onclick="enterDungeon()">I Solemnly Swear</button>
+                <button onclick="location.reload()" style="margin-top:10px; font-size:0.8rem; border:none;">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="arena-screen" class="hidden">
+        <div class="panel panel-task">
+            <div class="panel-header">
+                <span>THE TASK</span>
+                <span id="identity-display" style="font-size: 1.2rem; color: var(--danger); font-family: var(--hand-font); font-weight: bold;">--</span>
+            </div>
+            <div id="task-content-area">
+                <p id="student-problem-text" style="color: var(--ink-faded); font-style: italic;">The ink is invisible... waiting for the Ministry's spell...</p>
+            </div>
+        </div>
+        <div class="panel panel-editor">
+            <div class="panel-header">
+                <span>ENCHANTED QUILL</span>
+                <span id="sync-status" class="sync-badge sync-off">LINK: BROKEN</span>
+            </div>
+            <textarea id="code-editor" class="code-editor" spellcheck="false" placeholder="// Unite your minds. If one stops, all go blind."></textarea>
+            <button onclick="submitCode()" style="border:none; border-top: 1px solid var(--gold); background: #1a1512; padding: 15px;">CAST SPELL (SUBMIT)</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-overlay" class="hidden">
+        <h1>The Marauder's Map</h1>
+        <p id="round-status-text">Mischief Managed...</p>
+        <table class="leaderboard-table">
+            <thead><tr><th style="width: 10%">Rank</th><th style="width: 60%">Wizards</th><th style="width: 30%">House Points</th></tr></thead>
+            <tbody id="public-leaderboard-body"></tbody>
+        </table>
+        <br><br>
+        <div style="font-family: var(--body-font); font-style: italic; opacity: 0.7;">Waiting for the Headmaster...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, doc, updateDoc, onSnapshot, query, where, getDocs, increment, orderBy } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAebFWwiQCgwOJQWVO1Z1GiNG8IpVn3jM4",
+            authDomain: "triwizard-tourn.firebaseapp.com",
+            projectId: "triwizard-tourn",
+            storageBucket: "triwizard-tourn.firebasestorage.app",
+            messagingSenderId: "484089202933",
+            appId: "1:484089202933:web:653c6f0a7922ec99151dbc"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentTeamId = null;
+        let currentTeamData = null;
+        let latestGameState = null;
+        let currentMemberIndex = 0;
+        let currentMemberName = "";
+        let currentRoundId = null;
+        let roundStartTime = 0;
+        let timerInterval = null;
+        let countdownInterval = null;
+        let isCollaborationMode = false;
+        let collabDebounce = null;
+        let curseCheckInterval = null;
+        let effectCheckInterval = null;
+        let isTyping = false; 
+        let isInputBlocked = false;
+
+        function activateAntiCheat() {
+            window.addEventListener('blur', () => {
+                const arena = document.getElementById('arena-screen');
+                if (!arena.classList.contains('hidden')) {
+                    document.getElementById('cheat-overlay').classList.remove('hidden');
+                    document.title = "⚠️ RETURN IMMEDIATELY ⚠️";
+                }
+            });
+            window.addEventListener('focus', () => {
+                document.getElementById('cheat-overlay').classList.add('hidden');
+                document.title = "The Triwizard Tournament | Student Arena";
+            });
+            document.addEventListener('contextmenu', event => event.preventDefault());
+            document.addEventListener('keydown', function(e) {
+                if (
+                    (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'u' || e.key === 's')) || 
+                    (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                    (e.key === 'F12')
+                ) { e.preventDefault(); return false; }
+            });
+        }
+
+        window.onload = async () => {
+            activateAntiCheat();
+            const select = document.getElementById('team-select');
+            try {
+                const q = query(collection(db, "teams"), orderBy("name"));
+                const snap = await getDocs(q);
+                if (snap.empty) select.innerHTML = "<option disabled selected>No Teams Found (Check Admin)</option>";
+                else {
+                    select.innerHTML = "<option value='' disabled selected>-- Choose Team --</option>";
+                    snap.forEach(doc => { select.innerHTML += `<option value="${doc.id}">${doc.data().name}</option>`; });
+                }
+            } catch (error) { console.error(error); }
+        };
+
+        window.fetchTeamMembers = async () => {
+            const teamId = document.getElementById('team-select').value;
+            if(!teamId) return alert("Select a Team");
+            const docRef = doc(db, "teams", teamId);
+            const snap = await import("https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js").then(m => m.getDoc(docRef));
+            if(!snap.exists()) { alert("Team error"); return; }
+            currentTeamId = snap.id;
+            currentTeamData = snap.data();
+            const members = currentTeamData.members.split(',').map(m => m.trim());
+            const select = document.getElementById('member-select');
+            select.innerHTML = "";
+            members.forEach((m, i) => { select.innerHTML += `<option value="${i}">${m}</option>`; });
+            document.getElementById('login-step-1').classList.add('hidden');
+            document.getElementById('login-step-2').classList.remove('hidden');
+        };
+
+        window.enterDungeon = async () => {
+            const select = document.getElementById('member-select');
+            currentMemberIndex = parseInt(select.value);
+            currentMemberName = select.options[select.selectedIndex].text;
+            const teamName = currentTeamData.name.toUpperCase();
+            document.getElementById('identity-display').innerText = `${teamName} | ${currentMemberName.toUpperCase()}`;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('global-timer').classList.remove('hidden');
+            
+            // Set default view to Leaderboard initially
+            document.getElementById('leaderboard-overlay').classList.remove('hidden');
+            document.getElementById('arena-screen').classList.add('hidden');
+            
+            const updateObj = {};
+            updateObj[`memberActivity.${currentMemberIndex}`] = Date.now();
+            await updateDoc(doc(db, "teams", currentTeamId), updateObj);
+            
+            const savedDraft = localStorage.getItem('wizard_draft');
+            if(savedDraft) document.getElementById('code-editor').value = savedDraft;
+
+            setupEditor();
+            initListeners();
+            startCurseCheck();
+            startEffectCheck();
+        };
+
+        function setupEditor() {
+            const editor = document.getElementById('code-editor');
+            editor.addEventListener('paste', e => { e.preventDefault(); alert("The quill refuses to copy another's work!"); });
+            editor.addEventListener('click', () => triggerActivityUpdate());
+            
+            editor.addEventListener('keydown', (e) => {
+                if (isInputBlocked) {
+                    if (e.key === 'Enter' || e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); }
+                }
+            });
+
+            editor.addEventListener('input', (e) => {
+                isTyping = true;
+                triggerActivityUpdate(); 
+                localStorage.setItem('wizard_draft', editor.value);
+                if(!isCollaborationMode) return;
+                if(collabDebounce) clearTimeout(collabDebounce);
+                collabDebounce = setTimeout(async () => {
+                    await updateDoc(doc(db, "teams", currentTeamId), { sharedCode: editor.value });
+                    setTimeout(() => isTyping = false, 200); 
+                }, 300); 
+            });
+        }
+
+        function triggerActivityUpdate() {
+            if(!window.activityThrottle) {
+                const updateObj = {};
+                updateObj[`memberActivity.${currentMemberIndex}`] = Date.now();
+                updateDoc(doc(db, "teams", currentTeamId), updateObj);
+                window.activityThrottle = setTimeout(() => { window.activityThrottle = null; }, 2000);
+            }
+        }
+
+        function startCurseCheck() {
+            if(curseCheckInterval) clearInterval(curseCheckInterval);
+            const editor = document.getElementById('code-editor');
+            const syncBadge = document.getElementById('sync-status');
+
+            curseCheckInterval = setInterval(() => {
+                if (!isCollaborationMode) {
+                    if(editor.classList.contains('idle-curse')) editor.classList.remove('idle-curse');
+                    updateSyncBadgeDisplay();
+                    return;
+                }
+                if(!currentTeamData || !currentTeamData.memberActivity) return;
+                const now = Date.now();
+                const members = currentTeamData.members.split(',');
+                let weakestLinkIndex = -1;
+                for(let i=0; i<members.length; i++) {
+                    const lastActive = currentTeamData.memberActivity[i] || 0;
+                    if (now - lastActive > 10000) { weakestLinkIndex = i; break; }
+                }
+                if (weakestLinkIndex !== -1) {
+                    if(!editor.classList.contains('idle-curse')) {
+                        editor.classList.add('idle-curse');
+                        const slackerName = members[weakestLinkIndex].trim().split(' ')[0].toUpperCase();
+                        syncBadge.innerText = `${slackerName} IS LOST...`;
+                        syncBadge.className = "sync-badge curse-text";
+                    }
+                } else {
+                    if(editor.classList.contains('idle-curse')) {
+                        editor.classList.remove('idle-curse');
+                        updateSyncBadgeDisplay();
+                    }
+                }
+            }, 500); 
+        }
+
+        function startEffectCheck() {
+            if(effectCheckInterval) clearInterval(effectCheckInterval);
+            const body = document.body;
+            const syncBadge = document.getElementById('sync-status');
+
+            effectCheckInterval = setInterval(() => {
+                if(!currentTeamData || !currentTeamData.activeEffects) return;
+                const now = Date.now();
+                const effects = currentTeamData.activeEffects;
+
+                if (effects.mirror && effects.mirror > now) {
+                    if (!body.classList.contains('spell-mirror')) body.classList.add('spell-mirror');
+                } else {
+                    if (body.classList.contains('spell-mirror')) body.classList.remove('spell-mirror');
+                }
+
+                if (effects.silencio && effects.silencio > now) {
+                    isInputBlocked = true;
+                    if (!syncBadge.classList.contains('curse-text')) {
+                        syncBadge.innerText = "SILENCIO!";
+                        syncBadge.className = "sync-badge curse-text";
+                    }
+                } else {
+                    isInputBlocked = false;
+                    if (syncBadge.innerText === "SILENCIO!") updateSyncBadgeDisplay();
+                }
+            }, 1000);
+        }
+
+        function updateSyncBadgeDisplay() {
+            const badge = document.getElementById('sync-status');
+            if(isCollaborationMode) {
+                if(!badge.classList.contains('sync-on')) { badge.innerText = "LINK: ACTIVE"; badge.className = "sync-badge sync-on"; }
+            } else {
+                if(!badge.classList.contains('sync-off')) { badge.innerText = "LINK: BROKEN"; badge.className = "sync-badge sync-off"; }
+            }
+        }
+
+        function updateGameView() {
+            if (!latestGameState || !currentTeamData) return;
+            const state = latestGameState;
+            currentRoundId = state.currentRoundId;
+            isCollaborationMode = state.collaborationMode || false;
+            updateSyncBadgeDisplay();
+
+            const extra = currentTeamData.extraTime || 0;
+            if (state.status === 'running') {
+                handleTimer(state.endTime + extra);
+            } else {
+                stopTimer();
+            }
+
+            if(state.forceLeaderboard) {
+                toggleScreens('leaderboard');
+                document.getElementById('round-status-text').innerText = "THE MINISTRY IS SPEAKING...";
+                return;
+            }
+
+            const timeUntilStart = (state.startTime || 0) - Date.now();
+            if (state.status === 'running' && timeUntilStart > 0) {
+                handleCountdown(state.startTime);
+                return;
+            }
+
+            // --- CRITICAL FIX: Robust Allowed Check ---
+            // If participants list is missing or empty, EVERYONE is allowed.
+            const pList = state.participants;
+            const allowed = !pList || pList.length === 0 || pList.includes(currentTeamId);
+            
+            let isSubmitted = false;
+            if (isCollaborationMode) {
+                isSubmitted = currentTeamData.currentRoundSubmitted;
+            } else {
+                isSubmitted = currentTeamData.submissionStatus && currentTeamData.submissionStatus[currentMemberIndex];
+            }
+
+            if(state.status === 'running' && allowed && !isSubmitted && timeUntilStart <= 0) {
+                toggleScreens('arena');
+                const teamIndex = currentTeamData.teamIndex || 0;
+                let problem = "Awaiting instructions...";
+                if (isCollaborationMode) {
+                    const key = `${teamIndex}-SHARED`;
+                    if(state.problems && state.problems[key]) problem = state.problems[key];
+                } else {
+                    const key = `${teamIndex}-${currentMemberIndex}`;
+                    if(state.problems && state.problems[key]) problem = state.problems[key];
+                }
+                document.getElementById('student-problem-text').innerText = problem;
+
+                if(isCollaborationMode && currentTeamData.sharedCode !== undefined && !isTyping) {
+                    const editor = document.getElementById('code-editor');
+                    if(editor.value !== currentTeamData.sharedCode) editor.value = currentTeamData.sharedCode;
+                }
+            } else {
+                toggleScreens('leaderboard');
+                if(!allowed) document.getElementById('round-status-text').innerText = "Spectating from the stands...";
+                else if(isSubmitted) document.getElementById('round-status-text').innerText = "Spell Cast! Awaiting results...";
+                else document.getElementById('round-status-text').innerText = "Mischief Managed (Paused)";
+            }
+        }
+
+        function initListeners() {
+            onSnapshot(doc(db, "state", "game_state"), (docSnap) => {
+                if(!docSnap.exists()) return;
+                latestGameState = docSnap.data();
+                
+                if (currentRoundId !== latestGameState.currentRoundId) {
+                    roundStartTime = latestGameState.startTime || Date.now();
+                    const editor = document.getElementById('code-editor');
+                    let starter = "";
+                    const teamIndex = currentTeamData.teamIndex || 0;
+                    if(latestGameState.collaborationMode) {
+                        const key = `${teamIndex}-SHARED`;
+                        if(latestGameState.starters && latestGameState.starters[key]) starter = latestGameState.starters[key];
+                    } else {
+                        const key = `${teamIndex}-${currentMemberIndex}`;
+                        if(latestGameState.starters && latestGameState.starters[key]) starter = latestGameState.starters[key];
+                    }
+                    editor.value = starter;
+                }
+                updateGameView();
+            });
+
+            onSnapshot(doc(db, "teams", currentTeamId), (doc) => {
+                currentTeamData = doc.data();
+                updateGameView();
+            });
+
+            const q = query(collection(db, "teams"), orderBy("score", "desc"));
+            onSnapshot(q, (snap) => {
+                const tbody = document.getElementById('public-leaderboard-body');
+                tbody.innerHTML = "";
+                let rank = 1;
+                snap.forEach(d => {
+                    const t = d.data();
+                    const cls = rank === 1 ? 'row-1' : '';
+                    tbody.innerHTML += `<tr class="${cls}"><td>#${rank}</td><td>${t.name}</td><td>${Math.floor(t.score)}</td></tr>`;
+                    rank++;
+                });
+            });
+        }
+
+        function handleCountdown(start) {
+            const overlay = document.getElementById('countdown-overlay');
+            overlay.classList.remove('hidden');
+            document.getElementById('leaderboard-overlay').classList.add('hidden');
+            document.getElementById('arena-screen').classList.remove('hidden');
+
+            if(countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                const diff = Math.ceil((start - Date.now()) / 1000);
+                if(diff > 0) overlay.innerText = diff;
+                else {
+                    overlay.innerText = "LUMOS!";
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                        updateGameView(); 
+                    }, 500);
+                    clearInterval(countdownInterval);
+                }
+            }, 100);
+        }
+
+        function toggleScreens(type) {
+            const lb = document.getElementById('leaderboard-overlay');
+            const ar = document.getElementById('arena-screen');
+            const cd = document.getElementById('countdown-overlay');
+            if(type === 'arena') { 
+                lb.classList.add('hidden'); 
+                ar.classList.remove('hidden'); 
+                cd.classList.add('hidden'); // Ensure countdown is hidden if arena is active normally
+            }
+            else { 
+                lb.classList.remove('hidden'); 
+                ar.classList.add('hidden'); 
+            }
+        }
+
+        function handleTimer(endStr) {
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const diff = endStr - Date.now();
+                const el = document.getElementById('global-timer');
+                if(diff <= 0) { el.innerText = "00:00"; el.style.color = "red"; }
+                else {
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    el.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+                    el.style.color = "var(--gold)";
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if(timerInterval) clearInterval(timerInterval);
+            const el = document.getElementById('global-timer');
+            el.innerText = "00:00";
+            el.style.color = "var(--gold)";
+        }
+
+        window.submitCode = async () => {
+            if(!confirm("Cast this spell?")) return;
+            const code = document.getElementById('code-editor').value;
+            const now = Date.now();
+            const elapsed = now - roundStartTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = ((elapsed % 60000) / 1000).toFixed(0);
+            const timeStr = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            const submissionData = { code: code, timestamp: timeStr };
+            
+            const obj = {};
+            if (isCollaborationMode) {
+                obj[`submissions.${currentRoundId}_SHARED`] = submissionData;
+                obj.currentRoundSubmitted = true;
+            } else {
+                obj[`submissions.${currentRoundId}_${currentMemberIndex}`] = submissionData;
+                obj[`submissionStatus.${currentMemberIndex}`] = true;
+            }
+            await updateDoc(doc(db, "teams", currentTeamId), obj);
+        };
+    </script>
+</body>
+</html>
